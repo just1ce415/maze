@@ -49,9 +49,6 @@ class Maze:
         """
         Helper for find_path
         """
-        print(self, end="\n")
-        if vertex_stack.is_empty():
-            return False
         current_vertex = vertex_stack.peek()
         cur_ver_row = current_vertex.row
         cur_ver_col = current_vertex.col
@@ -66,15 +63,15 @@ class Maze:
         ):
             surr_vertexes.append(_CellPosition(cur_ver_row - 1, cur_ver_col))
         if (
-            self._valid_move(cur_ver_row + 1, cur_ver_col)
-            and not self._maze_cells[cur_ver_row + 1, cur_ver_col]
-        ):
-            surr_vertexes.append(_CellPosition(cur_ver_row + 1, cur_ver_col))
-        if (
             self._valid_move(cur_ver_row, cur_ver_col + 1)
             and not self._maze_cells[cur_ver_row, cur_ver_col + 1]
         ):
             surr_vertexes.append(_CellPosition(cur_ver_row, cur_ver_col + 1))
+        if (
+            self._valid_move(cur_ver_row + 1, cur_ver_col)
+            and not self._maze_cells[cur_ver_row + 1, cur_ver_col]
+        ):
+            surr_vertexes.append(_CellPosition(cur_ver_row + 1, cur_ver_col))
         if (
             self._valid_move(cur_ver_row, cur_ver_col - 1)
             and not self._maze_cells[cur_ver_row, cur_ver_col - 1]
@@ -82,8 +79,6 @@ class Maze:
             surr_vertexes.append(_CellPosition(cur_ver_row, cur_ver_col - 1))
 
         if not surr_vertexes:
-            self._mark_tried(cur_ver_row, cur_ver_col)
-            vertex_stack.pop()
             return None
 
         for unnumed_vertex in surr_vertexes:
@@ -91,6 +86,11 @@ class Maze:
             result = self.__find_helper(vertex_stack)
             if result is not None:
                 return result
+            else:
+                last_vertex = vertex_stack.peek()
+                self._mark_tried(last_vertex.row, last_vertex.col)
+                vertex_stack.pop()
+        return None
 
     def find_path(self):
         """
@@ -99,7 +99,12 @@ class Maze:
         """
         vertex_stack = Stack()
         vertex_stack.push(self._start_cell)
-        return self.__find_helper(vertex_stack)
+        result = self.__find_helper(vertex_stack)
+        if result is None:
+            last_vertex = vertex_stack.pop()
+            self._mark_tried(last_vertex.row, last_vertex.col)
+            return False
+        return result
 
     def reset(self):
         """Resets the maze by removing all "path" and "tried" tokens."""
@@ -133,7 +138,9 @@ class Maze:
 
     def _exit_found(self, row, col):
         """Helper method to determine if the exit was found."""
-        return row == self._exit_cell.row and col == self._exit_cell.col
+        if self._exit_cell:
+            return row == self._exit_cell.row and col == self._exit_cell.col
+        return False
 
     def _mark_tried(self, row, col):
         """Drops a "tried" token at the given cell."""
@@ -152,7 +159,7 @@ class _CellPosition:
         self.col = col
 
 
-def buildMaze(path):
+def build_maze(path):
     """
     Builds a maze from the file.
     """
@@ -172,23 +179,18 @@ def buildMaze(path):
     if not buffer_lst:
         return None
     maze = Maze(len(buffer_lst), len(buffer_lst[0]))
-    for row in buffer_lst:
-        for col in row:
-            if j == 0 and col is None:
+    for k in range(len(buffer_lst)):
+        for ppp in range(len(buffer_lst[0])):
+            if j == 0 and buffer_lst[k][ppp] is None and buffer_lst[k][ppp + 1] is None:
                 maze.set_start(i, j)
-            elif j == len(buffer_lst[0]) - 1 and col is None:
+            elif (
+                j == len(buffer_lst[0]) - 1
+                and buffer_lst[k][ppp] is None
+                and buffer_lst[k][ppp - 1] is None
+            ):
                 maze.set_exit(i, j)
-            maze._maze_cells[i, j] = col
+            maze._maze_cells[i, j] = buffer_lst[k][ppp]
             j += 1
         i += 1
         j = 0
     return maze
-
-
-if __name__ == "__main__":
-    maze = buildMaze("mazefile.txt")
-    print(maze)
-    maze.find_path()
-    print(maze)
-    maze.reset()
-    print(maze)
