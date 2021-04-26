@@ -6,7 +6,6 @@ Implementation of the maze ADT using C-based arrays and stacks (linked-based).
 
 ## Example
 ```python
->>> maze = Maze(5, 5)
 >>> maze = buildMaze("mazefile.txt")
 >>> print(maze)
 * * * * * 
